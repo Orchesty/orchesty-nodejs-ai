@@ -1,0 +1,17 @@
+{
+  "name": "@orchesty/nodejs-ai",
+  "description": "",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "author": "info@hanaboso.com",
+  "url": "https://github.com/Orchesty/orchesty-nodejs-ai",
+  "repository": "https://github.com/Orchesty/orchesty-nodejs-ai",
+  "packageManager": "pnpm@9.1.4",
+  "keywords": [],
+  "files": [
+    "rules",
+    "AI-INSTRUCTIONS.md",
+    "LICENSE",
+    "README.md"
+  ]
+}
