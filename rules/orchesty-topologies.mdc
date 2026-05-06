@@ -1,0 +1,124 @@
+---
+description: Topology JSON file format for Orchesty — structure, node types, and generation rules
+globs: src/**/*.tplg.json
+alwaysApply: false
+---
+
+# Topology JSON Files
+
+Every integration workflow is described by a **topology file** that the user imports into the Orchesty platform. The worker must produce these files alongside the TypeScript code.
+
+## File Location & Naming
+
+Topology files live in `src/topologies/` with the extension `.tplg.json`:
+
+```
+src/
+  topologies/
+    order-sync.tplg.json
+    contact-import.tplg.json
+```
+
+File name matches the topology name in kebab-case.
+
+## Top-Level Structure
+
+```json
+{
+    "nodes": [ ... ],
+    "connections": [ ... ]
+}
+```
+
+## Node Schema
+
+```json
+{
+    "type": "flow",
+    "id": "descriptive-kebab-id",
+    "label": "Connector",
+    "shape": "square",
+    "property": null,
+    "action": {
+        "name": "my-service-get-resource",
+        "worker": "worker-name",
+        "type": "connector",
+        "app": "my-service",
+        "icon": "<img src=\"data:image/svg+xml;base64,...\" alt=\"\" />"
+    },
+    "name": null,
+    "position": { "x": 0, "y": 0 }
+}
+```
+
+### Node Fields
+
+| Field | Description |
+|-------|-------------|
+| `type` | Always `"flow"` |
+| `id` | Descriptive kebab-case identifier, unique within the topology (e.g. `"fetch-orders"`, `"map-to-erp"`) |
+| `label` | Display label in the UI — see table below |
+| `shape` | Visual shape in the editor — see table below |
+| `property` | Always `null` |
+| `action` | `null` for triggers (Cron, Webhook) and Breakpoints; object for worker nodes |
+| `name` | `"cron"` for Cron triggers, `"webhook"` for Webhook triggers, custom event identifier for Event triggers (becomes part of the callback URL), `null` otherwise |
+| `position` | `{ "x": number, "y": number }` — layout coordinates in the editor |
+
+### Node Types
+
+| Node kind | `shape` | `label` | `action` | `name` |
+|-----------|---------|---------|----------|--------|
+| Cron trigger | `"circle"` | `"Cron"` | `null` | `"cron"` |
+| Webhook trigger | `"circle"` | `"Webhook"` | `null` | `"webhook"` |
+| Event trigger | `"circle"` | `"Event"` | `null` | event identifier (e.g. `"invite"`, `"order-created"`) — becomes part of the callback URL |
+| Connector | `"square"` | `"Connector"` | action object | `null` |
+| Batch | `"square"` | `"Batch"` | action object | `null` |
+| Custom node | `"square"` | `"Custom Action"` | action object | `null` |
+| Breakpoint | `"hexagon"` | `"Breakpoint"` | `null` | `null` |
+
+### Action Object
+
+| Field | Value |
+|-------|-------|
+| `name` | The node's `getName()` value (kebab-case) |
+| `worker` | Name of this worker project (e.g. from `package.json` name) |
+| `type` | `"connector"`, `"batch"`, or `"custom"` |
+| `app` | The application's `getName()` value that this node uses. For custom nodes without an application, use the application name of the service the node relates to. |
+| `icon` | Application logo as `<img src="data:image/svg+xml;base64,..." alt="" />`. Get the base64 value from the application's `getLogo()`. |
+
+## Connection Schema
+
+```json
+{
+    "id": "c1",
+    "from": "cron-trigger",
+    "to": "fetch-orders",
+    "sourceOutput": "output",
+    "targetInput": "input"
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `id` | Simple sequential identifier: `"c1"`, `"c2"`, `"c3"`, ... |
+| `from` | Source node `id` |
+| `to` | Target node `id` |
+| `sourceOutput` | Always `"output"` |
+| `targetInput` | Always `"input"` |
+
+## Layout Positioning
+
+Arrange nodes left-to-right with consistent spacing:
+
+- **Horizontal step:** 160–200px between sequential nodes
+- **Vertical offset:** use Y offset for parallel branches (e.g. +200 per branch)
+- **Starting position:** first node at `{ "x": 0, "y": 0 }` or a negative X for the trigger
+
+## Generation Rules
+
+1. **Every topology starts with one or more triggers** — Cron (`"circle"`, `name: "cron"`), Webhook (`"circle"`, `name: "webhook"`), or a mix. Multiple triggers can feed into the same or different branches.
+2. **Node IDs are descriptive**, not random hex — e.g. `"list-orders"`, `"map-order-to-invoice"`, `"create-invoice"`.
+3. **Connection IDs are sequential** — `"c1"`, `"c2"`, etc.
+4. **`worker` value** should match the project name (directory or `package.json` name).
+5. **One topology per file.** The file name is the topology name.
+6. **Include icons** from the application's `getLogo()` in every action object.
